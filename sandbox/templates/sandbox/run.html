@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Sandbox Test</title>
+</head>
+<body>
+
+<h2>Run Python Code</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <textarea name="code" rows="10" cols="60">{{ code }}</textarea>
+    <br><br>
+    <button type="submit">Run</button>
+</form>
+
+<hr>
+
+<h3>Output:</h3>
+<pre>{{ output }}</pre>
+
+<h3>Error:</h3>
+<pre>{{ error }}</pre>
+
+</body>
+</html>
