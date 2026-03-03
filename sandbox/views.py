@@ -21,16 +21,20 @@ def run_code_view(request):
     output = None
     error = None
     code = ""
+    user_input = ""
+    raw_response = None
+    vm_status = None
 
     if request.method == "POST":
-        code = request.POST.get("code")
+        code = request.POST.get("code", "")
+        user_input = request.POST.get("input", "")
 
         try:
             response = requests.post(
                 VM_URL,
                 json={
                     "code": code,
-                    "input": ""
+                    "input": user_input,
                 },
                 headers={
                     "X-API-KEY": API_KEY
@@ -38,9 +42,20 @@ def run_code_view(request):
                 timeout=10
             )
 
-            data = response.json()
-            output = data.get("stdout")
-            error = data.get("stderr") or data.get("error")
+            vm_status = response.status_code
+            raw_response = response.text
+            print("[sandbox.run] sent input repr:", repr(user_input))
+            print("[sandbox.run] VM /run status:", vm_status)
+            print("[sandbox.run] VM /run raw response repr:", repr(raw_response)[:1000])
+
+            try:
+                data = response.json()
+            except ValueError:
+                data = {}
+                error = f"VM returned non-JSON response (first 200 chars): {repr(raw_response)[:200]}"
+            else:
+                output = data.get("stdout")
+                error = data.get("stderr") or data.get("error")
 
         except Exception as e:
             error = str(e)
@@ -48,7 +63,10 @@ def run_code_view(request):
     return render(request, "sandbox/run.html", {
         "output": output,
         "error": error,
-        "code": code
+        "code": code,
+        "input": user_input,
+        "vm_status": vm_status,
+        "raw_response": raw_response,
     })
 
 import json
@@ -96,9 +114,6 @@ def submit_code_view(request):
         
         try:
             grading_result = response.json()
-            for i, result in enumerate(grading_result.get("results", [])):
-                if i < len(assignment["tests"]):
-                    result["description"] = assignment["tests"][i].get("description", f"Test Case {i+1}")
         
         except ValueError:
             return JsonResponse({

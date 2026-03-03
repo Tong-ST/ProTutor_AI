@@ -9,8 +9,14 @@
 
 <form method="post" id="run-form">
     {% csrf_token %}
+    <label for="code-area"><strong>Code:</strong></label><br>
     <textarea id="code-area" name="code" rows="10" cols="60">{{ code }}</textarea>
     <br><br>
+
+    <label for="input-area"><strong>Input (stdin):</strong></label><br>
+    <textarea id="input-area" name="input" rows="4" cols="60">{{ input }}</textarea>
+    <br><br>
+
     <button type="submit">Run</button>
     <button type="button" id="submit-btn">Submit</button>
 </form>
@@ -22,6 +28,13 @@
 
 <h3>Error:</h3>
 <pre>{{ error }}</pre>
+
+<!--
+<h3>VM Debug:</h3>
+<p><strong>Status:</strong> {{ vm_status }}</p>
+<p><strong>Raw response (first 4k chars):</strong></p>
+<pre>{{ raw_response|default:"" }}</pre>
+-->
 
 <div id="grading-result"></div>
 
@@ -99,9 +112,10 @@ document.getElementById("submit-btn").addEventListener("click", function () {
         card.style.backgroundColor = test.passed ? "#e6ffed" : "#ffe6e6";
 
         const status = test.passed ? "✅ PASS" : "❌ FAIL";
+        const desc = test.description || `Test ${index + 1}`;
 
         card.innerHTML = `
-            <h4>${test.description} - ${status}</h4>
+            <h4>${desc} - ${status}</h4>
             <p><strong>Input:</strong> ${test.input}</p>
             <p><strong>Expected:</strong> ${test.expected}</p>
             <p><strong>Your Output:</strong> ${test.output}</p>

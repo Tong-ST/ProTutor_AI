@@ -1,0 +1,12 @@
+[Unit]
+Description=Python Execution Sandbox
+After=network.target
+
+[Service]
+User=USERNAME
+WorkingDirectory=/home/USERNAME
+ExecStart=/usr/bin/python3 -m uvicorn executor:app --host 0>
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
