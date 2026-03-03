@@ -7,11 +7,12 @@
 
 <h2>Run Python Code</h2>
 
-<form method="post">
+<form method="post" id="run-form">
     {% csrf_token %}
-    <textarea name="code" rows="10" cols="60">{{ code }}</textarea>
+    <textarea id="code-area" name="code" rows="10" cols="60">{{ code }}</textarea>
     <br><br>
     <button type="submit">Run</button>
+    <button type="button" id="submit-btn">Submit</button>
 </form>
 
 <hr>
@@ -22,5 +23,97 @@
 <h3>Error:</h3>
 <pre>{{ error }}</pre>
 
+<div id="grading-result"></div>
+
 </body>
 </html>
+
+<script>
+function getCSRFToken() {
+    let cookieValue = null;
+    const name = "csrftoken=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookies = decodedCookie.split(";");
+
+    for (let i = 0; i < cookies.length; i++) {
+        let c = cookies[i].trim();
+        if (c.indexOf(name) === 0) {
+            cookieValue = c.substring(name.length, c.length);
+        }
+    }
+    return cookieValue;
+}
+
+document.getElementById("submit-btn").addEventListener("click", function () {
+
+    const code = document.getElementById("code-area").value;
+    const container = document.getElementById("grading-result");
+
+    // Clear previous result
+    container.innerHTML = "Grading...";
+
+    fetch("{% url 'submit' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify({
+            code: code,
+            assignment_id: 1
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("HTTP error " + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+
+    container.innerHTML = "";
+
+    if (data.error) {
+        container.innerHTML = "<strong>Error:</strong> " + data.error;
+        return;
+    }
+
+    // Check required fields
+    if (!data.results || !Array.isArray(data.results)) {
+        container.innerHTML = "<strong>Invalid response format.</strong>";
+        console.log("Unexpected JSON:", data);
+        return;
+    }
+
+    const summary = document.createElement("h3");
+    summary.textContent = `Passed ${data.passed} out of ${data.total} tests`;
+    container.appendChild(summary);
+
+    data.results.forEach((test, index) => {
+
+        const card = document.createElement("div");
+        card.style.border = "1px solid #ccc";
+        card.style.padding = "12px";
+        card.style.margin = "12px 0";
+        card.style.borderRadius = "8px";
+        card.style.backgroundColor = test.passed ? "#e6ffed" : "#ffe6e6";
+
+        const status = test.passed ? "✅ PASS" : "❌ FAIL";
+
+        card.innerHTML = `
+            <h4>${test.description} - ${status}</h4>
+            <p><strong>Input:</strong> ${test.input}</p>
+            <p><strong>Expected:</strong> ${test.expected}</p>
+            <p><strong>Your Output:</strong> ${test.output}</p>
+        `;
+
+        container.appendChild(card);
+    });
+    })
+    .catch(error => {
+        container.innerHTML = "<strong>Error:</strong> " + error.message;
+        console.error("Fetch error:", error);
+    });
+
+});
+</script>
