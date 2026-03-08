@@ -14,6 +14,12 @@ ASSIGNMENTS = {
                 "description": "Adds -1 and -5",
                 "input": "-1\n-5",
                 "expected": "-6"
+            },
+            {
+                "name": "Test Zero",
+                "description": "Adds -1 and 0",
+                "input": "-1\n0",
+                "expected": "-1"
             }
         ]
     }
